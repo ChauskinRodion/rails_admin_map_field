@@ -48,5 +48,9 @@ module RailsAdmin::Config::Fields::Types
     def longitude_dom_name
       @lon_dom_name ||= "#{bindings[:form].object_name}_#{longitude_field}"
     end
+
+    def map_url
+      "http://maps.googleapis.com/maps/api/js?key=#{self.google_api_key}&sensor=false&libraries=places&callback=init_map_field"
+    end
   end
 end

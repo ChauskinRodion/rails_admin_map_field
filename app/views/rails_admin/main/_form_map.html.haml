@@ -1,4 +1,49 @@
-= javascript_include_tag ("http://maps.googleapis.com/maps/api/js?key=#{field.google_api_key}&sensor=false&callback=init_map_field")
+:css
+  .gm-search-control {
+    margin-top: 10px;
+    border: 1px solid transparent;
+    border-radius: 2px 0 0 2px;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    height: 32px;
+    outline: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  #gm-search-box {
+    background-color: #fff;
+    font-family: Roboto;
+    font-size: 15px;
+    font-weight: 300;
+    margin-left: 12px;
+    padding: 0 11px 0 13px;
+    text-overflow: ellipsis;
+    width: 300px;
+  }
+
+  #gm-search-box:focus {
+    border-color: #4d90fe;
+  }
+
+  .pac-container {
+    font-family: Roboto;
+  }
+
+  #type-selector {
+    color: #fff;
+    background-color: #4d90fe;
+    padding: 5px 11px 0px 11px;
+  }
+
+  #type-selector label {
+    font-family: Roboto;
+    font-size: 13px;
+    font-weight: 300;
+  }
+  #target {
+    width: 345px;
+  }
+
 
 = javascript_tag do
   :plain
@@ -14,6 +59,9 @@
       };
 
       var map = new google.maps.Map(document.getElementById("#{field.dom_name}"), myOptions);
+      var input = document.getElementById('gm-search-box');
+      var searchBox = new google.maps.places.SearchBox(input);
+      map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
 
   - if form.object.send(field.name) && form.object.send(field.longitude_field)
     :plain
@@ -23,6 +71,24 @@
       });
 
   :plain
+
+      searchBox.addListener('places_changed', function() {
+        var places = searchBox.getPlaces();
+
+      if (places.length == 0) {
+        return;
+      }
+
+      places.forEach(function(place) {
+        if (!place.geometry) {
+          console.log("Returned place contains no geometry");
+          return;
+        }
+
+        updateLocation(place.geometry.location);
+      });
+    });
+
       google.maps.event.addListener(map, 'click', function(e) {
         updateLocation(e.latLng);
       });
@@ -38,11 +104,16 @@
         }
 
         map.setCenter(location);
+        map.setZoom(18);
         jQuery("##{field.latitude_dom_name}").val(location.lat());
         jQuery("##{field.longitude_dom_name}").val(location.lng());
       }
 
     })};
-%div.ramf-map-container{:id => field.dom_name, :style => "width:300px;height:200px"}
-= form.send :hidden_field, field.name, :id => field.latitude_dom_name
-= form.send :hidden_field, field.longitude_field, :id => field.longitude_dom_name
+
+= javascript_include_tag (field.map_url)
+
+%input.controls.gm-search-control{id: "gm-search-box", type: "text", placeholder: "Search Box"}
+%div.ramf-map-container{id: field.dom_name, style: "width:500px;height:300px"}
+= form.send :hidden_field, field.name, id: field.latitude_dom_name
+= form.send :hidden_field, field.longitude_field, id: field.longitude_dom_name
